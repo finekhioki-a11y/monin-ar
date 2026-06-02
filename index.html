@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     
-    <title>HOTEL FINE AR - MONIN</title>
+    <title>HOTEL FINE AR - MONIN SPRING</title>
 
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -15,23 +15,26 @@
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 18px 0;
-            background-color: #00cc66; /* 鮮やかな緑色 */
+            padding: 16px 0;
+            background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
             color: white;
-            font-size: 20px;
+            /* 💡 文字数が多くても小さなスマホで1行に美しく収まるよう、サイズを「17px」にし、横幅を「85%」に広げました */
+            font-size: 17px;
             font-weight: bold;
             border: none;
             border-radius: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(255,117,140,0.4);
             z-index: 999999 !important; 
             display: block !important; 
             text-decoration: none;
             font-family: sans-serif;
             text-align: center;
-            width: 80%;
+            width: 85%;
+            letter-spacing: 0.5px;
+            white-space: nowrap; /* 絶対に途中で改行させない設定 */
         }
         #ar-link-button:active {
-            background-color: #009944;
+            background: linear-gradient(135deg, #e6647b 0%, #e66e9d 100%);
         }
     </style>
 </head>
@@ -39,9 +42,11 @@
 
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
         <a-assets>
+            <!-- モナンの動画ファイル -->
             <video id="ar-video" src="monin_movie.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
         </a-assets>
 
+        <!-- HIROマーク、位置ど真ん中設定 -->
         <a-marker preset="hiro" id="marker">
             <a-video src="#ar-video" width="2.4" height="1.35" position="0 0 0" rotation="-90 0 0"></a-video>
         </a-marker>
@@ -49,7 +54,8 @@
         <a-entity camera></a-entity>
     </scene>
 
-    <a id="ar-link-button" href="https://www.hotel-fine.co.jp/member/rental/book/#target/page_no=1" target="_blank" rel="noopener noreferrer">カタログを開く</a>
+    <!-- 💡 ボタンの文字を新しいメニュー名に変更しました！リンク先は春フェアのままです -->
+    <a id="ar-link-button" href="https://www.hotel-fine.co.jp/fair-spring2026-specialtop/index.php" target="_blank" rel="noopener noreferrer">香るモナン・クラフトソーダ</a>
 
     <script>
         const marker = document.getElementById('marker');
