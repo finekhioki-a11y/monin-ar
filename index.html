@@ -4,64 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     
-    <title>HOTEL FINE AR - MONIN CHROMA</title>
+    <title>HOTEL FINE AR - MONIN GREEN CHROMACUTE</title>
 
-    <!-- 💡 カメラの不具合を起こしにくい、安定したバージョンのシステムに変更しました -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     
-    <script>
-        // よりシンプルに、カメラ起動に負荷をかけない透過プログラム
-        AFRAME.registerShader('chromakey', {
-            schema: {
-                src: { type: 'map' },
-                color: { type: 'color', default: '#00FF00' }
-            },
-            init: function(data) {
-                this.material = new THREE.ShaderMaterial({
-                    uniforms: {
-                        texture1: { type: 't', value: new THREE.Texture() },
-                        color: { type: 'c', value: new THREE.Color(data.color) }
-                    },
-                    vertexShader: `
-                        varying vec2 vUv;
-                        void main(void) {
-                            vUv = uv;
-                            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                        }
-                    `,
-                    fragmentShader: `
-                        uniform sampler2D texture1;
-                        uniform vec3 color;
-                        varying vec2 vUv;
-                        void main(void) {
-                            vec4 videoColor = texture2D(texture1, vUv);
-                            // 緑色（背景）との距離を計算
-                            float diff = distance(videoColor.rgb, color);
-                            // 緑に近い部分を透明にする
-                            if(diff < 0.45) {
-                                discard;
-                            } else {
-                                gl_FragColor = videoColor;
-                            }
-                        }
-                    `,
-                    transparent: true
-                });
-            },
-            tick: function() {
-                var videoEl = this.el.sceneEl.assets.querySelector(this.data.src);
-                if (videoEl && videoEl.readyState >= videoEl.HAVE_CURRENT_DATA) {
-                    if (!this.texture) {
-                        this.texture = new THREE.VideoTexture(videoEl);
-                        this.material.uniforms.texture1.value = this.texture;
-                    }
-                    this.texture.needsUpdate = true;
-                }
-            }
-        });
-    </script>
-
     <style>
         #ar-link-button {
             position: fixed;
@@ -85,22 +32,23 @@
             letter-spacing: 0.5px;
             white-space: nowrap;
         }
+        #ar-link-button:active {
+            background: linear-gradient(135deg, #e6647b 0%, #e66e9d 100%);
+        }
     </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; videoTexture: true;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
         <a-assets>
             <video id="ar-video" src="monin_movie.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
         </a-assets>
 
         <a-marker preset="hiro" id="marker">
-            <!-- 映像のチラつきを抑え、カメラと干渉しにくい設定に調整 -->
-            <a-entity geometry="primitive: plane; width: 2.4; height: 1.35;" 
-                      material="shader: chromakey; src: #ar-video; color: 0.0 1.0 0.0;" 
-                      position="0 0.01 0" 
-                      rotation="-90 0 0">
-            </a-entity>
+            <a-video src="#ar-video" width="2.4" height="1.35" position="0 0 0" rotation="-90 0 0"
+                     material="shader: flat; transparent: true; alphaTest: 0.5;"
+                     id="ar-video-entity">
+            </a-video>
         </a-marker>
 
         <a-entity camera></a-entity>
@@ -111,6 +59,29 @@
     <script>
         const marker = document.getElementById('marker');
         const video = document.getElementById('ar-video');
+        const videoEntity = document.getElementById('ar-video-entity');
+
+        // 💡 カメラがバグらないよう、ARシステム起動後に裏側で「緑色だけを透明にする処理」を動画に安全に注射します
+        videoEntity.addEventListener('materialtextureloaded', function () {
+            const mesh = videoEntity.getObject3D('mesh');
+            if (mesh && mesh.material) {
+                mesh.material.onBeforeCompile = function (shader) {
+                    shader.fragmentShader = shader.fragmentShader.replace(
+                        'vec4 color = texture2D( src, vUV );',
+                        `
+                        vec4 color = texture2D( src, vUV );
+                        // 基準となる緑色との距離を測る
+                        float diff = distance(color.rgb, vec3(0.0, 1.0, 0.0));
+                        // 緑色に近いピクセル（背景）の透明度をゼロにする
+                        if (diff < 0.55) {
+                            color.a = 0.0;
+                        }
+                        `
+                    );
+                };
+                mesh.material.needsUpdate = true;
+            }
+        });
 
         marker.addEventListener('markerFound', () => {
             video.play().catch(err => { console.log("自動再生ブロック中"); });
@@ -120,8 +91,10 @@
             video.pause();
         });
 
-        document.body.addEventListener('click', () => {
-            video.play();
+        document.body.addEventListener('click', (e) => {
+            if(e.target.id !== 'ar-link-button') {
+                video.play();
+            }
         });
     </script>
 </body>
