@@ -20,44 +20,32 @@
 <body style="margin: 0; overflow: hidden;">
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
         <a-assets>
-            <video id="ar-video" src="aroma_craftsoda_0603.webm" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted autoplay></video>
+            <!-- 古い動画の記憶をリセットするため、動画URLの末尾に ?v=2 を強制追加しました -->
+            <video id="ar-video" src="aroma_craftsoda_0603.webm?v=2" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted autoplay></video>
         </a-assets>
         <a-marker preset="hiro" id="marker">
-            <!-- 3D空間上で透明度（alpha）を正しく処理する設定にしました -->
-            <a-video src="#ar-video" width="2.4" height="1.35" position="0 0 0" rotation="-90 0 0"
-                     id="ar-video-entity" material="shader: flat; src: #ar-video; transparent: true; side: double;"></a-video>
+            <a-video src="#ar-video" width="2.4" height="1.35" position="0 0 0" rotation="-90 0 0" id="ar-video-entity"></a-video>
         </a-marker>
         <a-entity camera></a-entity>
     </a-scene>
     <a id="ar-link-button" href="https://www.hotel-fine.co.jp/fair-spring2026-specialtop/index.php" target="_blank" rel="noopener noreferrer">香るモナン・クラフトソーダ</a>
     <script>
-        // 【特効薬】動画の透明（アルファ）チャネルをAR上で強制的に引き出すプログラム
-        AFRAME.registerShader('transparent-video', {
-            schema: { src: { type: 'map' } },
-            init: function (data) {
-                const videoTexture = new THREE.VideoTexture(document.getElementById('ar-video'));
-                videoTexture.format = THREE.RGBAFormat; // 透明データ（RGBA）を維持
-                this.material = new THREE.MeshBasicMaterial({
-                    map: videoTexture,
-                    transparent: true,
-                    side: THREE.DoubleSide
-                });
-            },
-            update: function () { /* 特になし */ }
-        });
-
         const videoEntity = document.getElementById('ar-video-entity');
         videoEntity.addEventListener('materialtextureloaded', function () {
             const mesh = videoEntity.getObject3D('mesh');
             if (mesh && mesh.material) {
-                // 黒色の部分を完全に透過（消去）させる命令に書き換えます
                 mesh.material.onBeforeCompile = function (shader) {
                     shader.fragmentShader = shader.fragmentShader.replace(
                         'void main() {',
                         `void main() {
                            vec4 color = texture2D(map, vUv);
-                           // 完全に黒、または限りなく黒に近い背景を透明にする処理
-                           if (color.r < 0.05 && color.g < 0.05 && color.b < 0.05) { discard; }`
+                           
+                           // 【超強力調整】緑色の残りカス（クロマキー）を完全に消去
+                           float greenDiff = distance(color.rgb, vec3(0.0, 1.0, 0.0));
+                           if (greenDiff < 0.8) { discard; }
+                           
+                           // 【黒背景消去】動画の背景の黒い部分を完全に透明化（透過WebMがバグってもこれで消えます）
+                           if (color.r < 0.08 && color.g < 0.08 && color.b < 0.08) { discard; }`
                     );
                 };
                 mesh.material.transparent = true;
@@ -65,7 +53,7 @@
             }
         });
 
-        // 再生・一時停止の処理
+        // 再生コントロール
         const video = document.getElementById('ar-video');
         document.getElementById('marker').addEventListener('markerFound', () => {
             video.play().catch(e => console.log(e));
