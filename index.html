@@ -20,23 +20,28 @@
 <body style="margin: 0; overflow: hidden;">
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
         <a-assets>
-            <!-- ① 動画ファイルをさっき作ったWebMに変更しました -->
-            <video id="ar-video" src="aroma_craftsoda_0603.webm" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
+            <video id="ar-video" src="aroma_craftsoda_0603.webm" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted autoplay></video>
         </a-assets>
         <a-marker preset="hiro" id="marker">
-            <!-- ② 透過を有効にするために material="transparent: true; alphaTest: 0.5;" を追加しました -->
             <a-video src="#ar-video" width="2.4" height="1.35" position="0 0 0" rotation="-90 0 0"
-                     id="ar-video-entity" material="transparent: true; alphaTest: 0.5;"></a-video>
+                     id="ar-video-entity" material="shader: flat; src: #ar-video; transparent: true; alphaTest: 0.1; side: double;"></a-video>
         </a-marker>
         <a-entity camera></a-entity>
     </a-scene>
     <a id="ar-link-button" href="https://www.hotel-fine.co.jp/fair-spring2026-specialtop/index.php" target="_blank" rel="noopener noreferrer">香るモナン・クラフトソーダ</a>
     <script>
-        // ③ プログラムで緑を消す複雑な処理（シェーダー）は不要になったので全削除し、シンプルな再生処理だけにしました
         const video = document.getElementById('ar-video');
-        document.getElementById('marker').addEventListener('markerFound', () => video.play());
-        document.getElementById('marker').addEventListener('markerLost', () => video.pause());
-        document.body.addEventListener('click', () => video.play());
+        
+        // 確実に再生が始まるように調整
+        document.getElementById('marker').addEventListener('markerFound', () => {
+            video.play().catch(e => console.log(e));
+        });
+        document.getElementById('marker').addEventListener('markerLost', () => {
+            video.pause();
+        });
+        document.body.addEventListener('click', () => {
+            video.play().catch(e => console.log(e));
+        });
     </script>
 </body>
 </html>
